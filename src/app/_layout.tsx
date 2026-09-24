@@ -10,14 +10,15 @@ export default function RootLayout() {
       <StatusBar style="auto" />
       <Stack
         screenOptions={{
-          headerStyle: { backgroundColor: Colors.primary },
-          headerTintColor: Colors.surface,
-          headerTitleStyle: { fontWeight: 'bold' },
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: Colors.background,
+          },
         }}
       >
-        <Stack.Screen name="index" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="species" options={{ headerShown: false }} />
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="species" />
       </Stack>
     </FaunaPediaProvider>
   );
