@@ -17,15 +17,11 @@ class FaunaService {
         return await this.getCachedSpecies();
       }
 
-      const lastUpdate = await AsyncStorage.getItem(this.cacheKeys.lastUpdate);
       const now = Date.now();
-      const oneHour = 60 * 60 * 1000;
 
-      if (lastUpdate && now - parseInt(lastUpdate) < oneHour) {
-        const cached = await this.getCachedSpecies();
-        if (cached.length > 0) return cached;
-      }
-
+      // MockData is bundled with the app and may change during development.
+      // Always prefer the current bundled dataset when online so stale
+      // AsyncStorage entries do not keep old image URLs on screen.
       const allSpecies = await MockDataService.getAllSpecies();
 
       await AsyncStorage.setItem(
