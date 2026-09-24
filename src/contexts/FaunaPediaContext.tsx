@@ -1,8 +1,16 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useReducer } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
 import { SearchFilters, Species } from '../types/species';
 
-interface FaunaPediaState {
+export interface FaunaPediaState {
   species: Species[];
   favorites: string[];
   searchQuery: string;
@@ -11,7 +19,7 @@ interface FaunaPediaState {
   error: string | null;
 }
 
-type FaunaPediaAction =
+export type FaunaPediaAction =
   | { type: 'SET_SPECIES'; payload: Species[] }
   | { type: 'ADD_FAVORITE'; payload: string }
   | { type: 'REMOVE_FAVORITE'; payload: string }
@@ -22,6 +30,8 @@ type FaunaPediaAction =
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: string | null };
 
+const FAVORITES_KEY = 'faunapedia_favorites';
+
 const initialState: FaunaPediaState = {
   species: [],
   favorites: [],
@@ -31,14 +41,15 @@ const initialState: FaunaPediaState = {
   error: null,
 };
 
-const faunaPediaReducer = (
+function faunaPediaReducer(
   state: FaunaPediaState,
   action: FaunaPediaAction
-): FaunaPediaState => {
+): FaunaPediaState {
   switch (action.type) {
     case 'SET_SPECIES':
       return { ...state, species: action.payload };
     case 'ADD_FAVORITE':
+      if (state.favorites.includes(action.payload)) return state;
       return { ...state, favorites: [...state.favorites, action.payload] };
     case 'REMOVE_FAVORITE':
       return {
@@ -60,11 +71,12 @@ const faunaPediaReducer = (
     default:
       return state;
   }
-};
+}
 
 interface FaunaPediaContextType {
   state: FaunaPediaState;
   dispatch: React.Dispatch<FaunaPediaAction>;
+  favorites: string[];
   toggleFavorite: (speciesId: string) => Promise<void>;
   isFavorite: (speciesId: string) => boolean;
   getFilteredSpecies: () => Species[];
@@ -81,61 +93,63 @@ export function FaunaPediaProvider({
   children: React.ReactNode;
 }) {
   const [state, dispatch] = useReducer(faunaPediaReducer, initialState);
+  const [favoritesHydrated, setFavoritesHydrated] = useState(false);
 
   useEffect(() => {
+    let active = true;
+
+    const loadFavorites = async () => {
+      try {
+        const stored = await AsyncStorage.getItem(FAVORITES_KEY);
+        if (stored && active) {
+          const parsed = JSON.parse(stored);
+          if (Array.isArray(parsed)) {
+            dispatch({ type: 'SET_FAVORITES', payload: parsed });
+          }
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      } finally {
+        if (active) setFavoritesHydrated(true);
+      }
+    };
+
     loadFavorites();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
-    if (state.favorites.length > 0) {
-      saveFavorites();
-    }
-  }, [state.favorites]);
+    if (!favoritesHydrated) return;
 
-  const loadFavorites = async () => {
-    try {
-      const stored = await AsyncStorage.getItem('faunapedia_favorites');
-      if (stored) {
-        dispatch({ type: 'SET_FAVORITES', payload: JSON.parse(stored) });
-      }
-    } catch (error) {
-      console.error('Error loading favorites:', error);
-    }
-  };
+    AsyncStorage.setItem(FAVORITES_KEY, JSON.stringify(state.favorites)).catch(
+      (error) => console.error('Error saving favorites:', error)
+    );
+  }, [favoritesHydrated, state.favorites]);
 
-  const saveFavorites = async () => {
-    try {
-      await AsyncStorage.setItem(
-        'faunapedia_favorites',
-        JSON.stringify(state.favorites)
-      );
-    } catch (error) {
-      console.error('Error saving favorites:', error);
-    }
-  };
+  const toggleFavorite = useCallback(
+    async (speciesId: string) => {
+      dispatch({
+        type: state.favorites.includes(speciesId)
+          ? 'REMOVE_FAVORITE'
+          : 'ADD_FAVORITE',
+        payload: speciesId,
+      });
+    },
+    [state.favorites]
+  );
 
-  const toggleFavorite = async (speciesId: string) => {
-    if (state.favorites.includes(speciesId)) {
-      dispatch({ type: 'REMOVE_FAVORITE', payload: speciesId });
-    } else {
-      dispatch({ type: 'ADD_FAVORITE', payload: speciesId });
-    }
-  };
+  const isFavorite = useCallback(
+    (speciesId: string) => state.favorites.includes(speciesId),
+    [state.favorites]
+  );
 
-  const isFavorite = (speciesId: string) => {
-    return state.favorites.includes(speciesId);
-  };
-
-  const getFilteredSpecies = () => {
-    console.log('🔍 Filtering species:', {
-      totalSpecies: state.species.length,
-      searchQuery: state.searchQuery,
-      filters: state.filters,
-    });
-
+  const getFilteredSpecies = useCallback(() => {
     let filtered = [...state.species];
 
-    if (state.searchQuery && state.searchQuery.trim()) {
+    if (state.searchQuery.trim()) {
       const query = state.searchQuery.toLowerCase().trim();
       filtered = filtered.filter(
         (species) =>
@@ -144,25 +158,20 @@ export function FaunaPediaProvider({
           species.animal_type.toLowerCase().includes(query) ||
           species.habitat.toLowerCase().includes(query)
       );
-      console.log('🔍 After search filter:', filtered.length);
     }
 
     if (state.filters.animalType && state.filters.animalType !== 'all') {
+      const animalType = state.filters.animalType.toLowerCase();
       filtered = filtered.filter(
-        (species) =>
-          species.animal_type.toLowerCase() ===
-          state.filters.animalType?.toLowerCase()
+        (species) => species.animal_type.toLowerCase() === animalType
       );
-      console.log('🔍 After animal type filter:', filtered.length);
     }
 
     if (state.filters.habitat) {
+      const habitat = state.filters.habitat.toLowerCase();
       filtered = filtered.filter((species) =>
-        species.habitat
-          .toLowerCase()
-          .includes(state.filters.habitat?.toLowerCase() || '')
+        species.habitat.toLowerCase().includes(habitat)
       );
-      console.log('🔍 After habitat filter:', filtered.length);
     }
 
     if (state.filters.conservationStatus) {
@@ -170,25 +179,41 @@ export function FaunaPediaProvider({
         (species) =>
           species.conservation_status === state.filters.conservationStatus
       );
-      console.log('🔍 After conservation filter:', filtered.length);
     }
 
-    console.log('🔍 Final filtered species:', filtered.length);
+    if (state.filters.activeTime) {
+      const activeTime = state.filters.activeTime.toLowerCase();
+      filtered = filtered.filter(
+        (species) => species.active_time.toLowerCase() === activeTime
+      );
+    }
+
+    if (state.filters.diet) {
+      const diet = state.filters.diet.toLowerCase();
+      filtered = filtered.filter(
+        (species) => species.diet.toLowerCase() === diet
+      );
+    }
+
     return filtered;
-  };
+  }, [state.species, state.searchQuery, state.filters]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     dispatch({ type: 'CLEAR_FILTERS' });
-  };
+  }, []);
 
-  const value = {
-    state,
-    dispatch,
-    toggleFavorite,
-    isFavorite,
-    getFilteredSpecies,
-    clearFilters,
-  };
+  const value = useMemo(
+    () => ({
+      state,
+      dispatch,
+      favorites: state.favorites,
+      toggleFavorite,
+      isFavorite,
+      getFilteredSpecies,
+      clearFilters,
+    }),
+    [state, toggleFavorite, isFavorite, getFilteredSpecies, clearFilters]
+  );
 
   return (
     <FaunaPediaContext.Provider value={value}>
@@ -199,10 +224,12 @@ export function FaunaPediaProvider({
 
 export function useFaunaPedia() {
   const context = useContext(FaunaPediaContext);
-  if (context === undefined) {
+
+  if (!context) {
     throw new Error(
       'useFaunaPedia must be used within a FaunaPediaProvider'
     );
   }
+
   return context;
 }
