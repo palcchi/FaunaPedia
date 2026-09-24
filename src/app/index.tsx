@@ -5,28 +5,29 @@ import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Colors } from '../../constants/Colors';
+import { WelcomeHeroImage } from '../constants/SpeciesImages';
 
 export default function WelcomeScreen() {
   const features = [
     {
-      icon: 'library-outline',
+      icon: 'library-outline' as const,
       title: 'Ensiklopedia Lengkap',
-      description: 'Database ribuan spesies fauna dari seluruh dunia',
+      description: 'Informasi spesies, habitat, dan klasifikasi dalam satu tempat.',
     },
     {
-      icon: 'search-outline',
-      title: 'Pencarian Advanced',
-      description: 'Cari berdasarkan nama, habitat, atau klasifikasi',
+      icon: 'search-outline' as const,
+      title: 'Pencarian Cepat',
+      description: 'Cari berdasarkan nama, habitat, atau tipe hewan.',
     },
     {
-      icon: 'images-outline',
-      title: 'Galeri Media',
-      description: 'Koleksi foto dan video berkualitas tinggi',
+      icon: 'leaf-outline' as const,
+      title: 'Status Konservasi',
+      description: 'Lihat status konservasi setiap spesies dengan lebih jelas.',
     },
     {
-      icon: 'heart-outline',
+      icon: 'heart-outline' as const,
       title: 'Favorit Personal',
-      description: 'Simpan dan kelola spesies favorit Anda',
+      description: 'Simpan spesies yang ingin kamu pelajari lagi.',
     },
   ];
 
@@ -36,43 +37,52 @@ export default function WelcomeScreen() {
 
       <View style={styles.hero}>
         <Image
-          source="https://images.unsplash.com/photo-1547036967-23d11aacaee0"
+          source={WelcomeHeroImage}
           style={styles.heroImage}
           placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+          contentFit="cover"
+          cachePolicy="memory-disk"
         />
 
         <View style={styles.heroOverlay}>
-          <View style={styles.logoContainer}>
-            <Text style={styles.logoIcon}>🦎</Text>
-            <Text style={styles.appName}>Aplikasi FaunaPedia</Text>
+          <View style={styles.brandBadge}>
+            <Ionicons name="paw-outline" size={18} color={Colors.surface} />
+            <Text style={styles.brandBadgeText}>FAUNAPEDIA</Text>
           </View>
 
-          <Text style={styles.tagline}>Jendela Menuju Keajaiban Dunia Fauna</Text>
+          <Text style={styles.appName}>Kenali fauna dengan cara yang lebih sederhana.</Text>
+          <Text style={styles.tagline}>
+            Jelajahi koleksi spesies, habitat, karakteristik, dan status konservasinya.
+          </Text>
 
           <Pressable
             style={styles.ctaButton}
             onPress={() => router.push('/(tabs)/home')}
           >
             <Text style={styles.ctaText}>Mulai Eksplorasi</Text>
-            <Ionicons name="arrow-forward" size={20} color={Colors.surface} />
+            <Ionicons name="arrow-forward" size={18} color={Colors.surface} />
           </Pressable>
         </View>
       </View>
 
       <View style={styles.featuresSection}>
-        <Text style={styles.sectionTitle}>Fitur FaunaPedia</Text>
+        <Text style={styles.sectionEyebrow}>FITUR UTAMA</Text>
+        <Text style={styles.sectionTitle}>Belajar fauna tanpa tampilan yang ramai</Text>
+
         <View style={styles.featuresGrid}>
-          {features.map((feature, index) => (
-            <View key={index} style={styles.featureCard}>
+          {features.map((feature) => (
+            <View key={feature.title} style={styles.featureCard}>
               <View style={styles.featureIconContainer}>
                 <Ionicons
-                  name={feature.icon as any}
-                  size={30}
+                  name={feature.icon}
+                  size={22}
                   color={Colors.primary}
                 />
               </View>
-              <Text style={styles.featureTitle}>{feature.title}</Text>
-              <Text style={styles.featureDescription}>{feature.description}</Text>
+              <View style={styles.featureText}>
+                <Text style={styles.featureTitle}>{feature.title}</Text>
+                <Text style={styles.featureDescription}>{feature.description}</Text>
+              </View>
             </View>
           ))}
         </View>
@@ -80,16 +90,18 @@ export default function WelcomeScreen() {
 
       <View style={styles.statsSection}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>10,000+</Text>
-          <Text style={styles.statLabel}>Spesies</Text>
+          <Text style={styles.statNumber}>12</Text>
+          <Text style={styles.statLabel}>Spesies Demo</Text>
         </View>
+        <View style={styles.statDivider} />
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>50,000+</Text>
-          <Text style={styles.statLabel}>Foto & Video</Text>
+          <Text style={styles.statNumber}>4</Text>
+          <Text style={styles.statLabel}>Kategori</Text>
         </View>
+        <View style={styles.statDivider} />
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>195</Text>
-          <Text style={styles.statLabel}>Negara</Text>
+          <Text style={styles.statNumber}>1</Text>
+          <Text style={styles.statLabel}>Aplikasi</Text>
         </View>
       </View>
     </ScrollView>
@@ -102,7 +114,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.background,
   },
   hero: {
-    height: 400,
+    height: 470,
     position: 'relative',
   },
   heroImage: {
@@ -111,116 +123,145 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(45, 80, 22, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    inset: 0,
+    backgroundColor: 'rgba(24, 45, 24, 0.62)',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 20,
+    paddingBottom: 38,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  logoIcon: {
-    fontSize: 60,
-    marginBottom: 10,
-  },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: Colors.surface,
-    textAlign: 'center',
-  },
-  tagline: {
-    fontSize: 16,
-    color: Colors.surface,
-    textAlign: 'center',
-    marginBottom: 30,
-    opacity: 0.9,
-  },
-  ctaButton: {
+  brandBadge: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.24)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
+    marginBottom: 16,
+  },
+  brandBadgeText: {
+    color: Colors.surface,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+  },
+  appName: {
+    maxWidth: 340,
+    fontSize: 31,
+    lineHeight: 38,
+    fontWeight: '700',
+    color: Colors.surface,
+  },
+  tagline: {
+    maxWidth: 340,
+    fontSize: 14,
+    lineHeight: 21,
+    color: Colors.surface,
+    opacity: 0.84,
+    marginTop: 10,
+    marginBottom: 24,
+  },
+  ctaButton: {
+    alignSelf: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 9,
     backgroundColor: Colors.accent,
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 25,
-    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 13,
+    borderRadius: 14,
   },
   ctaText: {
     color: Colors.surface,
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
   },
   featuresSection: {
-    padding: 20,
+    paddingHorizontal: 16,
+    paddingTop: 28,
+  },
+  sectionEyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.3,
+    color: Colors.primary,
+    marginBottom: 5,
   },
   sectionTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 21,
+    lineHeight: 28,
+    fontWeight: '700',
     color: Colors.text.primary,
-    textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
+    maxWidth: 320,
   },
   featuresGrid: {
-    gap: 15,
+    gap: 10,
   },
   featureCard: {
-    backgroundColor: Colors.surface,
-    padding: 20,
-    borderRadius: 12,
+    flexDirection: 'row',
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    gap: 12,
+    backgroundColor: Colors.surface,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.05)',
   },
   featureIconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 42,
+    height: 42,
+    borderRadius: 13,
     backgroundColor: Colors.background,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 15,
+  },
+  featureText: {
+    flex: 1,
   },
   featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: Colors.text.primary,
-    textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 3,
   },
   featureDescription: {
-    fontSize: 14,
+    fontSize: 12,
+    lineHeight: 18,
     color: Colors.text.secondary,
-    textAlign: 'center',
-    lineHeight: 20,
   },
   statsSection: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 20,
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginTop: 20,
+    marginBottom: 28,
+    paddingVertical: 18,
     backgroundColor: Colors.surface,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    borderRadius: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.05)',
   },
   statCard: {
+    flex: 1,
     alignItems: 'center',
   },
+  statDivider: {
+    width: 1,
+    height: 34,
+    backgroundColor: 'rgba(26,26,26,0.08)',
+  },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '700',
     color: Colors.primary,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.text.secondary,
-    marginTop: 4,
+    marginTop: 3,
   },
 });
