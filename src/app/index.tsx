@@ -123,7 +123,10 @@ const styles = StyleSheet.create({
   },
   heroOverlay: {
     position: 'absolute',
-    inset: 0,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     backgroundColor: 'rgba(24, 45, 24, 0.62)',
     justifyContent: 'flex-end',
     paddingHorizontal: 20,
