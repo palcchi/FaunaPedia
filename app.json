@@ -3,12 +3,13 @@
     "name": "FaunaPedia",
     "slug": "faunapedia",
     "version": "1.0.0",
+    "description": "Jelajahi keajaiban dunia fauna dengan FaunaPedia",
     "orientation": "portrait",
-    "icon": "./assets/images/faunapedia-icon.png",
+    "icon": "./assets/images/icon.png",
     "scheme": "faunapedia",
     "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/faunapedia-splash.png",
+      "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#2D5016"
     },
@@ -17,14 +18,20 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.faunapedia"
+      "bundleIdentifier": "com.yourname.faunapedia",
+      "buildNumber": "1"
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/faunapedia-adaptive.png",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundColor": "#2D5016"
       },
-      "package": "com.yourname.faunapedia"
+      "package": "com.yourname.faunapedia",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE"
+      ]
     },
     "web": {
       "bundler": "metro",
