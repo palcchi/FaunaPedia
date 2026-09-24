@@ -31,8 +31,9 @@ export default function FavoritesScreen() {
   const loadFavoriteSpecies = async () => {
     try {
       const allSpecies = await FaunaService.getAllSpecies();
-      const favorites = allSpecies.filter((species) => state.favorites.includes(species.id));
-      setFavoriteSpecies(favorites);
+      setFavoriteSpecies(
+        allSpecies.filter((species) => state.favorites.includes(species.id))
+      );
     } catch (error) {
       console.error('Error loading favorite species:', error);
       Alert.alert('Error', 'Gagal memuat spesies favorit');
@@ -48,12 +49,17 @@ export default function FavoritesScreen() {
   const handleRemoveFavorite = (speciesId: string, speciesName: string) => {
     Alert.alert('Hapus Favorit', `Hapus ${speciesName} dari daftar favorit?`, [
       { text: 'Batal', style: 'cancel' },
-      { text: 'Hapus', style: 'destructive', onPress: () => toggleFavorite(speciesId) },
+      {
+        text: 'Hapus',
+        style: 'destructive',
+        onPress: () => toggleFavorite(speciesId),
+      },
     ]);
   };
 
   const handleClearAllFavorites = () => {
     if (favoriteSpecies.length === 0) return;
+
     Alert.alert(
       'Hapus Semua Favorit',
       'Apakah Anda yakin ingin menghapus semua spesies dari daftar favorit?',
@@ -62,7 +68,10 @@ export default function FavoritesScreen() {
         {
           text: 'Hapus Semua',
           style: 'destructive',
-          onPress: () => state.favorites.forEach((id) => dispatch({ type: 'REMOVE_FAVORITE', payload: id })),
+          onPress: () =>
+            state.favorites.forEach((id) =>
+              dispatch({ type: 'REMOVE_FAVORITE', payload: id })
+            ),
         },
       ]
     );
@@ -70,11 +79,16 @@ export default function FavoritesScreen() {
 
   const handleShareFavorites = async () => {
     if (favoriteSpecies.length === 0) return;
-    const shareText = `Spesies favorit saya di FaunaPedia 🦎:\n\n${favoriteSpecies
+
+    const shareText = `Spesies favorit saya di FaunaPedia:\n\n${favoriteSpecies
       .map((species, index) => `${index + 1}. ${species.name} (${species.latin_name})`)
-      .join('\n')}\n\nUnduh FaunaPedia untuk mengeksplorasi dunia fauna!`;
+      .join('\n')}\n\nJelajahi lebih banyak spesies di FaunaPedia.`;
+
     try {
-      await Share.share({ message: shareText, title: 'Spesies Favorit FaunaPedia' });
+      await Share.share({
+        message: shareText,
+        title: 'Spesies Favorit FaunaPedia',
+      });
     } catch (error) {
       console.error('Error sharing favorites:', error);
     }
@@ -82,6 +96,7 @@ export default function FavoritesScreen() {
 
   const sortedFavorites = useMemo(() => {
     const sorted = [...favoriteSpecies];
+
     switch (sortBy) {
       case 'name':
         return sorted.sort((a, b) => a.name.localeCompare(b.name));
@@ -92,9 +107,18 @@ export default function FavoritesScreen() {
         });
       case 'recent':
       default:
-        return sorted.sort((a, b) => state.favorites.indexOf(b.id) - state.favorites.indexOf(a.id));
+        return sorted.sort(
+          (a, b) =>
+            state.favorites.indexOf(b.id) - state.favorites.indexOf(a.id)
+        );
     }
   }, [favoriteSpecies, sortBy, state.favorites]);
+
+  const endangeredCount = favoriteSpecies.filter(
+    (species) =>
+      species.conservation_status === 'Endangered' ||
+      species.conservation_status === 'Critically Endangered'
+  ).length;
 
   const renderSpeciesCard = ({ item }: { item: Species }) => (
     <SpeciesCard
@@ -111,63 +135,111 @@ export default function FavoritesScreen() {
       style={[styles.sortButton, sortBy === type && styles.sortButtonActive]}
       onPress={() => setSortBy(type)}
     >
-      <Text style={[styles.sortButtonText, sortBy === type && styles.sortButtonTextActive]}>{label}</Text>
+      <Text
+        style={[
+          styles.sortButtonText,
+          sortBy === type && styles.sortButtonTextActive,
+        ]}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>💛</Text>
-      <Text style={styles.emptyStateTitle}>Belum Ada Spesies Favorit</Text>
+      <View style={styles.emptyIcon}>
+        <Ionicons name="heart-outline" size={28} color={Colors.primary} />
+      </View>
+      <Text style={styles.emptyStateTitle}>Belum ada favorit</Text>
       <Text style={styles.emptyStateDescription}>
-        Mulai menjelajahi katalog spesies dan tambahkan yang menarik ke daftar favorit Anda
+        Simpan spesies yang menarik agar mudah ditemukan kembali.
       </Text>
-      <Pressable style={styles.exploreButton} onPress={() => router.push('/(tabs)/catalog')}>
-        <Ionicons name="search-outline" size={20} color={Colors.surface} />
-        <Text style={styles.exploreButtonText}>Jelajahi Spesies</Text>
+      <Pressable
+        style={styles.exploreButton}
+        onPress={() => router.push('/(tabs)/catalog')}
+      >
+        <Ionicons name="search-outline" size={18} color={Colors.surface} />
+        <Text style={styles.exploreButtonText}>Jelajahi Katalog</Text>
       </Pressable>
     </View>
   );
 
   const renderHeader = () => (
-    <View style={styles.headerContainer}>
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{favoriteSpecies.length}</Text>
-          <Text style={styles.statLabel}>Spesies Favorit</Text>
+    <View>
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryTop}>
+          <View>
+            <Text style={styles.eyebrow}>KOLEKSI SAYA</Text>
+            <Text style={styles.summaryTitle}>Spesies favorit</Text>
+          </View>
+          <View style={styles.summaryIcon}>
+            <Ionicons name="heart-outline" size={20} color={Colors.primary} />
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>{new Set(favoriteSpecies.map((s) => s.animal_type)).size}</Text>
-          <Text style={styles.statLabel}>Tipe Hewan</Text>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{favoriteSpecies.length}</Text>
+            <Text style={styles.statLabel}>Favorit</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>
+              {new Set(favoriteSpecies.map((s) => s.animal_type)).size}
+            </Text>
+            <Text style={styles.statLabel}>Tipe</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{endangeredCount}</Text>
+            <Text style={styles.statLabel}>Terancam</Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statItem}>
-          <Text style={styles.statNumber}>
-            {favoriteSpecies.filter(
-              (s) => s.conservation_status === 'Endangered' || s.conservation_status === 'Critically Endangered'
-            ).length}
-          </Text>
-          <Text style={styles.statLabel}>Terancam</Text>
+
+        <View style={styles.actionButtons}>
+          <Pressable style={styles.actionButton} onPress={handleShareFavorites}>
+            <Ionicons name="share-outline" size={18} color={Colors.primary} />
+            <Text style={styles.actionButtonText}>Bagikan</Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.actionButton, styles.dangerButton]}
+            onPress={handleClearAllFavorites}
+          >
+            <Ionicons
+              name="trash-outline"
+              size={18}
+              color={Colors.status.error}
+            />
+            <Text style={[styles.actionButtonText, styles.dangerText]}>
+              Hapus
+            </Text>
+          </Pressable>
         </View>
       </View>
 
-      {favoriteSpecies.length > 0 && (
-        <View style={styles.actionButtons}>
-          <Pressable style={styles.actionButton} onPress={handleShareFavorites}>
-            <Ionicons name="share-outline" size={20} color={Colors.primary} />
-            <Text style={styles.actionButtonText}>Bagikan</Text>
-          </Pressable>
-          <Pressable style={[styles.actionButton, styles.dangerButton]} onPress={handleClearAllFavorites}>
-            <Ionicons name="trash-outline" size={20} color={Colors.status.error} />
-            <Text style={[styles.actionButtonText, styles.dangerButtonText]}>Hapus Semua</Text>
-          </Pressable>
+      {endangeredCount > 0 && (
+        <View style={styles.alertContainer}>
+          <View style={styles.alertIcon}>
+            <Ionicons
+              name="warning-outline"
+              size={19}
+              color={Colors.status.warning}
+            />
+          </View>
+          <View style={styles.alertContent}>
+            <Text style={styles.alertTitle}>Perlu perhatian</Text>
+            <Text style={styles.alertDescription}>
+              {endangeredCount} spesies favorit memiliki status terancam.
+            </Text>
+          </View>
         </View>
       )}
 
       {favoriteSpecies.length > 1 && (
         <View style={styles.sortContainer}>
-          <Text style={styles.sortLabel}>Urutkan:</Text>
+          <Text style={styles.sortLabel}>Urutkan</Text>
           <View style={styles.sortButtons}>
             {renderSortButton('recent', 'Terbaru')}
             {renderSortButton('name', 'Nama')}
@@ -178,27 +250,10 @@ export default function FavoritesScreen() {
     </View>
   );
 
-  const renderConservationAlert = () => {
-    const endangeredSpecies = favoriteSpecies.filter(
-      (s) => s.conservation_status === 'Endangered' || s.conservation_status === 'Critically Endangered'
-    );
-    if (endangeredSpecies.length === 0) return null;
-    return (
-      <View style={styles.alertContainer}>
-        <Ionicons name="warning" size={24} color={Colors.status.warning} />
-        <View style={styles.alertContent}>
-          <Text style={styles.alertTitle}>Spesies Terancam</Text>
-          <Text style={styles.alertDescription}>
-            {endangeredSpecies.length} dari spesies favorit Anda dalam status terancam punah
-          </Text>
-        </View>
-      </View>
-    );
-  };
-
   return (
     <View style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style="dark" />
+
       {favoriteSpecies.length === 0 ? (
         renderEmptyState()
       ) : (
@@ -206,8 +261,10 @@ export default function FavoritesScreen() {
           data={sortedFavorites}
           renderItem={renderSpeciesCard}
           keyExtractor={(item) => item.id}
-          ListHeaderComponent={<View>{renderHeader()}{renderConservationAlert()}</View>}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+          ListHeaderComponent={renderHeader}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContent}
         />
@@ -217,34 +274,209 @@ export default function FavoritesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  headerContainer: { backgroundColor: Colors.surface, margin: 16, borderRadius: 16, padding: 20, elevation: 3, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 8 },
-  statsContainer: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 20 },
-  statItem: { alignItems: 'center' },
-  statNumber: { fontSize: 24, fontWeight: 'bold', color: Colors.primary },
-  statLabel: { fontSize: 12, color: Colors.text.secondary, marginTop: 4, textAlign: 'center' },
-  statDivider: { width: 1, backgroundColor: Colors.background, marginHorizontal: 10 },
-  actionButtons: { flexDirection: 'row', gap: 12, marginBottom: 20 },
-  actionButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingVertical: 12, paddingHorizontal: 16, borderRadius: 8, borderWidth: 1, borderColor: Colors.primary, gap: 8 },
-  dangerButton: { borderColor: Colors.status.error },
-  actionButtonText: { fontSize: 14, fontWeight: '600', color: Colors.primary },
-  dangerButtonText: { color: Colors.status.error },
-  sortContainer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  sortLabel: { fontSize: 14, fontWeight: '600', color: Colors.text.primary },
-  sortButtons: { flexDirection: 'row', gap: 8, flex: 1 },
-  sortButton: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: Colors.text.secondary },
-  sortButtonActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  sortButtonText: { fontSize: 12, fontWeight: '500', color: Colors.text.secondary },
-  sortButtonTextActive: { color: Colors.surface },
-  alertContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.status.warning + '15', margin: 16, padding: 16, borderRadius: 12, borderLeftWidth: 4, borderLeftColor: Colors.status.warning },
-  alertContent: { flex: 1, marginLeft: 12 },
-  alertTitle: { fontSize: 14, fontWeight: '600', color: Colors.text.primary, marginBottom: 2 },
-  alertDescription: { fontSize: 12, color: Colors.text.secondary, lineHeight: 18 },
-  listContent: { paddingBottom: 20 },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40 },
-  emptyStateIcon: { fontSize: 80, marginBottom: 24 },
-  emptyStateTitle: { fontSize: 24, fontWeight: 'bold', color: Colors.text.primary, textAlign: 'center', marginBottom: 12 },
-  emptyStateDescription: { fontSize: 16, color: Colors.text.secondary, textAlign: 'center', lineHeight: 24, marginBottom: 32, maxWidth: 280 },
-  exploreButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.primary, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 25, gap: 8 },
-  exploreButtonText: { fontSize: 16, fontWeight: '600', color: Colors.surface },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  listContent: {
+    paddingTop: 8,
+    paddingBottom: 28,
+  },
+  summaryCard: {
+    margin: 16,
+    marginBottom: 10,
+    backgroundColor: Colors.surface,
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.05)',
+  },
+  summaryTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  eyebrow: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1.2,
+    color: Colors.primary,
+    marginBottom: 4,
+  },
+  summaryTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  summaryIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: Colors.background,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 18,
+    paddingVertical: 14,
+    backgroundColor: Colors.background,
+    borderRadius: 14,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  statLabel: {
+    fontSize: 11,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: 'rgba(26,26,26,0.08)',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+  },
+  actionButton: {
+    flex: 1,
+    minHeight: 42,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 7,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(45,80,22,0.22)',
+  },
+  dangerButton: {
+    borderColor: 'rgba(220,20,60,0.22)',
+  },
+  actionButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: Colors.primary,
+  },
+  dangerText: {
+    color: Colors.status.error,
+  },
+  alertContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginBottom: 10,
+    padding: 13,
+    backgroundColor: Colors.status.warning + '10',
+    borderRadius: 14,
+  },
+  alertIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: Colors.status.warning + '14',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alertContent: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  alertTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  alertDescription: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    marginTop: 2,
+  },
+  sortContainer: {
+    paddingHorizontal: 16,
+    marginTop: 6,
+    marginBottom: 4,
+  },
+  sortLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.text.secondary,
+    marginBottom: 8,
+  },
+  sortButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  sortButton: {
+    paddingHorizontal: 13,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.06)',
+  },
+  sortButtonActive: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  sortButtonText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: Colors.text.secondary,
+  },
+  sortButtonTextActive: {
+    color: Colors.surface,
+  },
+  emptyState: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 7,
+    marginBottom: 22,
+    maxWidth: 290,
+  },
+  exploreButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 13,
+  },
+  exploreButtonText: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: Colors.surface,
+  },
 });
