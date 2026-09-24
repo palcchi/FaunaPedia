@@ -192,7 +192,7 @@ export default function HomeScreen() {
                 >
                   <Image
                     source={species.image_link}
-                    style={styles.featuredImage}
+                    style={{ width: '100%', height: '100%' }}
                     placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
                     transition={180}
                     contentFit="cover"
@@ -457,10 +457,6 @@ const styles = StyleSheet.create({
   },
   featuredImageContainer: {
     height: 150,
-  },
-  featuredImage: {
-    width: '100%',
-    height: '100%',
   },
   featuredFavorite: {
     position: 'absolute',
