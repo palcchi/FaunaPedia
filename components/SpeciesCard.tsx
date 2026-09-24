@@ -20,16 +20,33 @@ export default function SpeciesCard({
   isFavorite,
 }: SpeciesCardProps) {
   return (
-    <Pressable style={styles.card} onPress={onPress}>
-      <Image
-        source={species.image_link}
-        style={styles.image}
-        placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
-        transition={200}
-      />
+    <View style={styles.card}>
+      <Pressable onPress={onPress} style={styles.imageWrap}>
+        <Image
+          source={species.image_link}
+          style={styles.image}
+          placeholder="L6PZfSi_.AyE_3t7t7R**0o#DgR4"
+          transition={180}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+        />
+      </Pressable>
 
-      <View style={styles.content}>
-        <View style={styles.header}>
+      <Pressable
+        onPress={onFavoritePress}
+        style={styles.favoriteButton}
+        accessibilityRole="button"
+        accessibilityLabel={isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit'}
+      >
+        <Ionicons
+          name={isFavorite ? 'heart' : 'heart-outline'}
+          size={20}
+          color={isFavorite ? Colors.status.error : Colors.text.primary}
+        />
+      </Pressable>
+
+      <Pressable onPress={onPress} style={styles.content}>
+        <View style={styles.titleRow}>
           <View style={styles.titleSection}>
             <Text style={styles.commonName} numberOfLines={1}>
               {species.name}
@@ -38,98 +55,105 @@ export default function SpeciesCard({
               {species.latin_name}
             </Text>
           </View>
-
-          <Pressable onPress={onFavoritePress} style={styles.favoriteButton}>
-            <Ionicons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={24}
-              color={isFavorite ? Colors.status.error : Colors.text.secondary}
-            />
-          </Pressable>
+          <ConservationBadge status={species.conservation_status} />
         </View>
 
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <Ionicons name="paw-outline" size={16} color={Colors.text.secondary} />
-            <Text style={styles.detailText}>{species.animal_type}</Text>
+        <View style={styles.metaRow}>
+          <View style={styles.metaItem}>
+            <Ionicons name="paw-outline" size={15} color={Colors.text.secondary} />
+            <Text style={styles.metaText}>{species.animal_type}</Text>
           </View>
 
-          <View style={styles.detailRow}>
-            <Ionicons name="location-outline" size={16} color={Colors.text.secondary} />
-            <Text style={styles.detailText} numberOfLines={1}>
+          <View style={styles.metaItemWide}>
+            <Ionicons name="location-outline" size={15} color={Colors.text.secondary} />
+            <Text style={styles.metaText} numberOfLines={1}>
               {species.habitat}
             </Text>
           </View>
-
-          <View style={styles.detailRow}>
-            <Ionicons name="time-outline" size={16} color={Colors.text.secondary} />
-            <Text style={styles.detailText}>Umur: {species.lifespan}</Text>
-          </View>
         </View>
-
-        <ConservationBadge status={species.conservation_status} />
-      </View>
-    </Pressable>
+      </Pressable>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
     backgroundColor: Colors.surface,
-    borderRadius: 16,
+    borderRadius: 18,
     marginHorizontal: 16,
     marginVertical: 8,
-    elevation: 3,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.06)',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    elevation: 2,
+  },
+  imageWrap: {
+    width: '100%',
   },
   image: {
     width: '100%',
-    height: 200,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    height: 176,
+  },
+  favoriteButton: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(255,255,255,0.94)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
   },
   content: {
-    padding: 16,
+    padding: 14,
   },
-  header: {
+  titleRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    gap: 10,
   },
   titleSection: {
     flex: 1,
-    marginRight: 8,
   },
   commonName: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 17,
+    fontWeight: '700',
     color: Colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   scientificName: {
-    fontSize: 14,
+    fontSize: 13,
     fontStyle: 'italic',
     color: Colors.text.secondary,
   },
-  favoriteButton: {
-    padding: 4,
+  metaRow: {
+    flexDirection: 'row',
+    gap: 14,
+    marginTop: 12,
   },
-  details: {
-    marginBottom: 12,
-    gap: 6,
-  },
-  detailRow: {
+  metaItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  detailText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: Colors.text.secondary,
+  metaItemWide: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  metaText: {
+    marginLeft: 5,
+    fontSize: 12,
+    color: Colors.text.secondary,
+    flexShrink: 1,
   },
 });
