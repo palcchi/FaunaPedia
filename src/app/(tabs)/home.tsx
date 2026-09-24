@@ -434,7 +434,7 @@ const styles = StyleSheet.create({
   },
   categoryName: {
     fontSize: 15,
-    fontWeight: '650',
+    fontWeight: '600',
     color: Colors.text.primary,
   },
   categoryHint: {
