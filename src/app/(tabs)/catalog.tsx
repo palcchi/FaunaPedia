@@ -20,13 +20,21 @@ import { Species } from '../../types/species';
 const ITEMS_PER_PAGE = 20;
 
 export default function CatalogScreen() {
-  console.log('🦎 CatalogScreen rendered');
-  const { state, dispatch, toggleFavorite, isFavorite, getFilteredSpecies, clearFilters } = useFaunaPedia();
+  const {
+    state,
+    dispatch,
+    toggleFavorite,
+    isFavorite,
+    getFilteredSpecies,
+    clearFilters,
+  } = useFaunaPedia();
+
   const [page, setPage] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<string>('all');
   const [localSearchQuery, setLocalSearchQuery] = useState(state.searchQuery);
+
   const animalTypes = ['all', 'Mammal', 'Bird', 'Reptile', 'Fish'];
 
   useEffect(() => {
@@ -36,7 +44,8 @@ export default function CatalogScreen() {
   useEffect(() => {
     if (state.filters.animalType) {
       setSelectedFilter(state.filters.animalType);
-      console.log('🔍 Filter set from context:', state.filters.animalType);
+    } else {
+      setSelectedFilter('all');
     }
   }, [state.filters.animalType]);
 
@@ -47,12 +56,12 @@ export default function CatalogScreen() {
   const loadSpecies = async () => {
     try {
       dispatch({ type: 'SET_LOADING', payload: true });
-      console.log('🦎 Loading all species...');
+      dispatch({ type: 'SET_ERROR', payload: null });
+
       const species = await FaunaService.getAllSpecies();
-      console.log('🦎 Species loaded:', species.length);
       dispatch({ type: 'SET_SPECIES', payload: species });
     } catch (error) {
-      console.error('🚨 Error loading species:', error);
+      console.error('Error loading species:', error);
       dispatch({ type: 'SET_ERROR', payload: 'Failed to load species data' });
     } finally {
       dispatch({ type: 'SET_LOADING', payload: false });
@@ -69,16 +78,17 @@ export default function CatalogScreen() {
   const handleSearch = (text: string) => {
     setLocalSearchQuery(text);
     dispatch({ type: 'SET_SEARCH_QUERY', payload: text });
+    setPage(1);
   };
 
   const handleFilterChange = (type: string) => {
-    console.log('🔍 Filter changed to:', type);
     setSelectedFilter(type);
-    if (type === 'all') {
-      dispatch({ type: 'SET_FILTERS', payload: { animalType: undefined } });
-    } else {
-      dispatch({ type: 'SET_FILTERS', payload: { animalType: type } });
-    }
+
+    dispatch({
+      type: 'SET_FILTERS',
+      payload: { animalType: type === 'all' ? undefined : type },
+    });
+
     setPage(1);
   };
 
@@ -91,17 +101,24 @@ export default function CatalogScreen() {
 
   const loadMoreSpecies = () => {
     if (loadingMore) return;
+
     setLoadingMore(true);
     setTimeout(() => {
-      setPage((prev) => prev + 1);
+      setPage((previous) => previous + 1);
       setLoadingMore(false);
-    }, 1000);
+    }, 500);
   };
 
   const filteredAndPaginatedSpecies = useMemo(() => {
     const filtered = getFilteredSpecies();
     return filtered.slice(0, page * ITEMS_PER_PAGE);
-  }, [state.species, state.searchQuery, state.filters, page, getFilteredSpecies]);
+  }, [
+    state.species,
+    state.searchQuery,
+    state.filters,
+    page,
+    getFilteredSpecies,
+  ]);
 
   const totalFilteredCount = useMemo(
     () => getFilteredSpecies().length,
@@ -117,31 +134,65 @@ export default function CatalogScreen() {
     />
   );
 
-  const renderFilterChip = (type: string) => (
-    <Pressable
-      key={type}
-      style={[styles.filterChip, selectedFilter === type && styles.filterChipSelected]}
-      onPress={() => handleFilterChange(type)}
-    >
-      <Text style={[styles.filterChipText, selectedFilter === type && styles.filterChipTextSelected]}>
-        {type === 'all' ? 'Semua' : type}
-      </Text>
-    </Pressable>
-  );
+  const renderFilterChip = (type: string) => {
+    const labelMap: Record<string, string> = {
+      all: 'Semua',
+      Mammal: 'Mamalia',
+      Bird: 'Burung',
+      Reptile: 'Reptil',
+      Fish: 'Ikan',
+    };
+
+    const iconMap: Record<string, keyof typeof Ionicons.glyphMap> = {
+      all: 'apps-outline',
+      Mammal: 'paw-outline',
+      Bird: 'paper-plane-outline',
+      Reptile: 'leaf-outline',
+      Fish: 'fish-outline',
+    };
+
+    const isSelected = selectedFilter === type;
+
+    return (
+      <Pressable
+        key={type}
+        style={[styles.filterChip, isSelected && styles.filterChipSelected]}
+        onPress={() => handleFilterChange(type)}
+      >
+        <Ionicons
+          name={iconMap[type]}
+          size={15}
+          color={isSelected ? Colors.surface : Colors.text.secondary}
+        />
+        <Text
+          style={[
+            styles.filterChipText,
+            isSelected && styles.filterChipTextSelected,
+          ]}
+        >
+          {labelMap[type]}
+        </Text>
+      </Pressable>
+    );
+  };
 
   const renderFooter = () =>
     loadingMore ? (
       <View style={styles.loadingMore}>
         <ActivityIndicator color={Colors.primary} />
-        <Text style={styles.loadingMoreText}>Memuat lebih banyak spesies...</Text>
+        <Text style={styles.loadingMoreText}>Memuat lebih banyak...</Text>
       </View>
     ) : null;
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>🔍</Text>
-      <Text style={styles.emptyStateTitle}>Tidak Ada Spesies Ditemukan</Text>
-      <Text style={styles.emptyStateDescription}>Coba ubah kata kunci pencarian atau filter yang dipilih</Text>
+      <View style={styles.emptyIcon}>
+        <Ionicons name="search-outline" size={28} color={Colors.primary} />
+      </View>
+      <Text style={styles.emptyStateTitle}>Spesies tidak ditemukan</Text>
+      <Text style={styles.emptyStateDescription}>
+        Coba ubah kata kunci atau pilih kategori lain.
+      </Text>
       <Pressable style={styles.clearButton} onPress={handleClearFilters}>
         <Text style={styles.clearButtonText}>Hapus Filter</Text>
       </Pressable>
@@ -149,40 +200,51 @@ export default function CatalogScreen() {
   );
 
   const renderHeader = () => (
-    <View>
+    <View style={styles.headerContent}>
       <View style={styles.searchContainer}>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search-outline" size={20} color={Colors.text.secondary} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Cari spesies, nama latin, atau habitat..."
-            value={localSearchQuery}
-            onChangeText={handleSearch}
-            returnKeyType="search"
-          />
-          {localSearchQuery.length > 0 && (
-            <Pressable onPress={() => handleSearch('')}>
-              <Ionicons name="close-circle" size={20} color={Colors.text.secondary} />
-            </Pressable>
-          )}
-        </View>
-      </View>
-      <View style={styles.filtersContainer}>
-        <Text style={styles.filtersLabel}>Filter berdasarkan tipe:</Text>
-        <FlatList
-          data={animalTypes}
-          renderItem={({ item }) => renderFilterChip(item)}
-          keyExtractor={(item) => item}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filtersContent}
+        <Ionicons
+          name="search-outline"
+          size={20}
+          color={Colors.text.secondary}
         />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Cari nama, nama latin, atau habitat"
+          placeholderTextColor={Colors.text.secondary}
+          value={localSearchQuery}
+          onChangeText={handleSearch}
+          returnKeyType="search"
+        />
+        {localSearchQuery.length > 0 && (
+          <Pressable
+            onPress={() => handleSearch('')}
+            style={styles.clearSearchButton}
+          >
+            <Ionicons
+              name="close"
+              size={18}
+              color={Colors.text.secondary}
+            />
+          </Pressable>
+        )}
       </View>
-      <View style={styles.resultsContainer}>
-        <Text style={styles.resultsText}>{totalFilteredCount} spesies ditemukan</Text>
+
+      <FlatList
+        data={animalTypes}
+        renderItem={({ item }) => renderFilterChip(item)}
+        keyExtractor={(item) => item}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.filtersContent}
+      />
+
+      <View style={styles.resultsRow}>
+        <Text style={styles.resultsText}>
+          {totalFilteredCount} spesies
+        </Text>
         {(state.searchQuery || selectedFilter !== 'all') && (
           <Pressable onPress={handleClearFilters}>
-            <Text style={styles.clearFiltersText}>Hapus Filter</Text>
+            <Text style={styles.clearFiltersText}>Reset</Text>
           </Pressable>
         )}
       </View>
@@ -192,8 +254,10 @@ export default function CatalogScreen() {
   if (state.loading && state.species.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Memuat katalog spesies...</Text>
+        <View style={styles.loadingIcon}>
+          <ActivityIndicator color={Colors.primary} />
+        </View>
+        <Text style={styles.loadingText}>Memuat katalog...</Text>
       </View>
     );
   }
@@ -205,15 +269,25 @@ export default function CatalogScreen() {
         renderItem={renderSpeciesCard}
         keyExtractor={(item) => item.id}
         ListHeaderComponent={renderHeader}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        onEndReached={totalFilteredCount > filteredAndPaginatedSpecies.length ? loadMoreSpecies : null}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        onEndReached={
+          totalFilteredCount > filteredAndPaginatedSpecies.length
+            ? loadMoreSpecies
+            : undefined
+        }
         onEndReachedThreshold={0.5}
         ListFooterComponent={renderFooter}
-        ListEmptyComponent={state.species.length > 0 ? renderEmptyState : null}
+        ListEmptyComponent={
+          state.species.length > 0 ? renderEmptyState : undefined
+        }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.listContent,
-          filteredAndPaginatedSpecies.length === 0 && state.species.length > 0 && styles.emptyListContent,
+          filteredAndPaginatedSpecies.length === 0 &&
+            state.species.length > 0 &&
+            styles.emptyListContent,
         ]}
       />
     </View>
@@ -221,30 +295,158 @@ export default function CatalogScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  searchContainer: { padding: 16, backgroundColor: Colors.surface },
-  searchInputContainer: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background, borderRadius: 25, paddingHorizontal: 16, height: 50, borderWidth: 1, borderColor: Colors.text.secondary + '30' },
-  searchInput: { flex: 1, marginLeft: 12, fontSize: 16, color: Colors.text.primary },
-  filtersContainer: { backgroundColor: Colors.surface, paddingHorizontal: 16, paddingBottom: 16 },
-  filtersLabel: { fontSize: 14, color: Colors.text.secondary, marginBottom: 8, fontWeight: '500' },
-  filtersContent: { gap: 8 },
-  filterChip: { backgroundColor: Colors.background, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: Colors.text.secondary + '30' },
-  filterChipSelected: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  filterChipText: { fontSize: 14, color: Colors.text.secondary, fontWeight: '500' },
-  filterChipTextSelected: { color: Colors.surface, fontWeight: '600' },
-  resultsContainer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: Colors.surface, borderBottomWidth: 1, borderBottomColor: Colors.background },
-  resultsText: { fontSize: 14, color: Colors.text.secondary, fontWeight: '500' },
-  clearFiltersText: { fontSize: 14, color: Colors.primary, fontWeight: '600' },
-  listContent: { paddingBottom: 20 },
-  emptyListContent: { flex: 1 },
-  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background },
-  loadingText: { marginTop: 16, fontSize: 16, color: Colors.text.secondary },
-  loadingMore: { padding: 20, alignItems: 'center' },
-  loadingMoreText: { marginTop: 8, fontSize: 14, color: Colors.text.secondary },
-  emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 40, minHeight: 300 },
-  emptyStateIcon: { fontSize: 60, marginBottom: 16 },
-  emptyStateTitle: { fontSize: 20, fontWeight: 'bold', color: Colors.text.primary, marginBottom: 8, textAlign: 'center' },
-  emptyStateDescription: { fontSize: 16, color: Colors.text.secondary, textAlign: 'center', lineHeight: 24, marginBottom: 20 },
-  clearButton: { backgroundColor: Colors.primary, paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-  clearButtonText: { color: Colors.surface, fontWeight: '600' },
+  container: {
+    flex: 1,
+    backgroundColor: Colors.background,
+  },
+  headerContent: {
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  searchContainer: {
+    marginHorizontal: 16,
+    minHeight: 50,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 15,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.06)',
+  },
+  searchInput: {
+    flex: 1,
+    marginLeft: 9,
+    fontSize: 14,
+    color: Colors.text.primary,
+    paddingVertical: 0,
+  },
+  clearSearchButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: Colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  filtersContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  filterChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: Colors.surface,
+    borderWidth: 1,
+    borderColor: 'rgba(26,26,26,0.06)',
+  },
+  filterChipSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
+  },
+  filterChipText: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    fontWeight: '600',
+  },
+  filterChipTextSelected: {
+    color: Colors.surface,
+  },
+  resultsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 6,
+  },
+  resultsText: {
+    fontSize: 12,
+    color: Colors.text.secondary,
+    fontWeight: '600',
+  },
+  clearFiltersText: {
+    fontSize: 12,
+    color: Colors.primary,
+    fontWeight: '700',
+  },
+  listContent: {
+    paddingBottom: 28,
+  },
+  emptyListContent: {
+    flexGrow: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: Colors.background,
+  },
+  loadingIcon: {
+    width: 54,
+    height: 54,
+    borderRadius: 17,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  loadingText: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+  },
+  loadingMore: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  loadingMoreText: {
+    marginTop: 7,
+    fontSize: 12,
+    color: Colors.text.secondary,
+  },
+  emptyState: {
+    flex: 1,
+    minHeight: 340,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  emptyIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 20,
+    backgroundColor: Colors.surface,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyStateTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    color: Colors.text.primary,
+  },
+  emptyStateDescription: {
+    fontSize: 14,
+    color: Colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 18,
+  },
+  clearButton: {
+    backgroundColor: Colors.primary,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  clearButtonText: {
+    color: Colors.surface,
+    fontWeight: '700',
+    fontSize: 13,
+  },
 });
